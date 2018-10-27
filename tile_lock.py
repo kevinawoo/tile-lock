@@ -10,6 +10,9 @@ from objc import NO
 from Foundation import NSBundle, NSClassFromString, NSObject, NSRunLoop, NSDate, NSUUID, NSMakeRange, NSURL
 from AVFoundation import AVAudioPlayer
 import Quartz
+from PyObjCTools import AppHelper
+
+
 
 global lock_player
 global warn_player
@@ -40,22 +43,24 @@ objc.loadBundleFunctions(Login, globals(), functions)
 lock_sound_file = NSURL.fileURLWithPath_(path_to_lock_sound)
 lock_player = AVAudioPlayer.alloc().initWithContentsOfURL_error_(
     lock_sound_file, None)
-lock_player.setNumberOfLoops_(0)
+# lock_player.setNumberOfLoops_(0)
 
 # Prep the sound file
 warn_sound_file = NSURL.fileURLWithPath_(path_to_warn_sound)
 warn_player = AVAudioPlayer.alloc().initWithContentsOfURL_error_(
     warn_sound_file, None)
-warn_player.setNumberOfLoops_(0)
+# warn_player.setNumberOfLoops_(0)
 
 class BluetoothDelegate(NSObject):
+    print "fuck"
     screen_lock_time = 0.0
     def centralManager_didDiscoverPeripheral_advertisementData_RSSI_(
             self, central, peripheral, advertisement_data, rssi):
         global player
-        if peripheral.name() != 'Tile':
+        print "Found a Tile: identifier: ", peripheral.identifier()
+	if peripheral.name() != 'Tile':
             return
-        #print "Found a Tile: identifier: ", peripheral.identifier()
+        print "Found a Tile: identifier: ", peripheral.identifier()
         
         ad_data = advertisement_data.get(
             CBAdvertisementDataManufacturerDataKey, None)
@@ -78,7 +83,7 @@ class BluetoothDelegate(NSObject):
                         # print ad_bytes
                         proximityUUID = NSUUID.alloc().initWithUUIDBytes_(
                             ad_bytes)
-                        #print "proximityUUID: %s" % proximityUUID
+                        print "proximityUUID: %s" % proximityUUID
                         # ^ uncomment this one to see beacons when you trigger them
                         #if str(proximityUUID) in approved_UUIDs:
                         if str(proximityUUID):
@@ -102,18 +107,20 @@ class BluetoothDelegate(NSObject):
 
     def centralManagerDidUpdateState_(self, central):
         '''Required delegate method'''
+	print "centralManagerDidUpdateState"
         pass
 
 
 def do_it():
-    delegate = BluetoothDelegate.alloc().init()
-    manager = CBCentralManager.alloc().initWithDelegate_queue_(delegate, None)
-    manager.scanForPeripheralsWithServices_options_(None, None)
-    while True:
-        try:
-            NSRunLoop.currentRunLoop().runUntilDate_(
-                NSDate.dateWithTimeIntervalSinceNow_(0.5))
-        except (KeyboardInterrupt, SystemExit):
-            break
+    # delegate = BluetoothDelegate.alloc().init()
+    manager = CBCentralManager.alloc().initWithDelegate_queue_(BluetoothDelegate(), None)
+    AppHelper.runConosleEventLoop()
+	# manager.scanForPeripheralsWithServices_options_(None, None)
+#    while True:
+#        try:
+#            NSRunLoop.currentRunLoop().runUntilDate_(
+#                NSDate.dateWithTimeIntervalSinceNow_(0.5))
+#        except (KeyboardInterrupt, SystemExit):
+#            break
 
 do_it()
