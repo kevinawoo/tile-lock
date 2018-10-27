@@ -42,16 +42,42 @@ class BleClass(object):
         self.peripheral = peripheral
         if peripheral.name() != 'Tile':
             return
-	print 'DeviceName' + repr(peripheral.UUID)
-	#ad_data = advertisement_data.get(CBAdvertisementDataManufacturerDataKey, None)
-	#print ad_data
+        print 'DeviceName' + repr(peripheral.UUID)
         if "CC112152-37E5-4FE8-8A4C-B858AE1883A8" in repr(peripheral.UUID):
-	    print "pairing"
+            print "pairing..."
             print "data: " + repr(data)
+            ad_data = data.get(CBAdvertisementDataManufacturerDataKey, None)
+                    if ad_data != None:
+                        companyIDRange = NSMakeRange(0,2);
+                        companyIdentifier = ad_data.getBytes_range_(None, companyIDRange)
+                        if (ord(companyIdentifier[0]) == 0x4C):
+                            # print "1. got compIdentifier 0x4C"
+                            dataTypeRange = NSMakeRange(2,1);
+                            dataType = ad_data.getBytes_range_(None, dataTypeRange)
+                            if (ord(dataType) == 0x02):
+                                # print "2. got dataType 0x02"
+                                dataLengthRange = NSMakeRange(3,1);
+                                dataLength = ad_data.getBytes_range_(None, dataLengthRange)
+                                #print "dataLength: %s" % ord(dataLength)
+                                if (ord(dataLength) == 0x15):
+                                    # print "3. got dataLength 0x15"
+                                    uuidRange = NSMakeRange(4, 16)
+                                    ad_bytes = ad_data.getBytes_range_(None, uuidRange)
+                                    # print ad_bytes
+                                    proximityUUID = NSUUID.alloc().initWithUUIDBytes_(
+                                        ad_bytes)
+                                    print "proximityUUID: %s" % proximityUUID
+                                    # ^ uncomment this one to see beacons when you trigger them
+                                    #if str(proximityUUID) in approved_UUIDs:
+                                    if str(proximityUUID):
+                                        # Tile is in beacon mode; ie the button was
+                                        # double-clicked
+                                        print "You clicked it.\n"
+
             manager.connectPeripheral_options_(peripheral, None)
             manager.stopScan()
             #SACLockScreenImmediate()
-    
+
     def centralManager_didConnectPeripheral_(self, manager, peripheral):
         print "connected " + repr(peripheral.UUID())
         # SACLockScreenImmediate()
