@@ -47,6 +47,7 @@ class BleClass(object):
             print "pairing..."
             print "data: " + repr(data)
             ad_data = data.get(CBAdvertisementDataManufacturerDataKey, None)
+            print "ad_data: " + repr(ad_data)
             if ad_data != None:
                 companyIDRange = NSMakeRange(0,2);
                 companyIdentifier = ad_data.getBytes_range_(None, companyIDRange)
